@@ -53,7 +53,7 @@ def main():
     
     # Models to evaluate
     models = [
-        "deepseek/deepseek-r1-0528"
+        "anthropic/claude-sonnet-4"
     ]
     
     # Load and filter data
