@@ -65,8 +65,8 @@ def main():
         print("Please make sure the file exists in the current directory.")
         return
     
-    filtered_data = [item for item in data if item['level'] == 'Seleksi PTN' and item['is_for_fewshot'] == '0']
-    print(f"Loaded {len(filtered_data)} questions for evaluation")
+    filtered_data = [item for item in data if item['level'] == 'Seleksi PTN' and item['is_for_fewshot'] == '0' and item['subject'] == 'Bahasa Indonesia']
+    print(f"Loaded {len(filtered_data)} Bahasa Indonesia questions for evaluation")
     
     all_model_results = {}
     
@@ -74,6 +74,13 @@ def main():
         print(f"\n{'='*50}")
         print(f"Evaluating model: {model}")
         print(f"{'='*50}")
+        
+        # Create output file for this model at the start
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        model_name = model.replace('/', '_')
+        output_file = f"eval_results_{model_name}_{timestamp}.jsonl"
+        
+        print(f"Results will be saved incrementally to: {output_file}")
         
         results = []
         correct_count = 0
@@ -93,6 +100,10 @@ def main():
                 
                 results.append(result)
                 
+                # Save result immediately after evaluation
+                with open(output_file, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(result, ensure_ascii=False) + '\n')
+                
                 if result['is_correct']:
                     correct_count += 1
                 
@@ -111,19 +122,11 @@ def main():
                 # Show progress every 50 questions
                 if (i + 1) % 50 == 0:
                     print(f"\nProgress: {i+1}/{len(filtered_data)} | Accuracy: {current_accuracy:.3f}")
+                    print(f"Results saved so far: {output_file}")
                     
             except Exception as e:
                 print(f"Error evaluating question {i+1}: {e}")
                 continue
-        
-        # Save results for this model
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        model_name = model.replace('/', '_')
-        output_file = f"eval_results_{model_name}_{timestamp}.jsonl"
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
-            for result in results:
-                f.write(json.dumps(result, ensure_ascii=False) + '\n')
         
         # Store results
         final_accuracy = sum(r['is_correct'] for r in results) / len(results) if results else 0
@@ -134,7 +137,7 @@ def main():
         }
         
         print(f"Final accuracy for {model}: {final_accuracy:.3f}")
-        print(f"Results saved to: {output_file}")
+        print(f"All results saved to: {output_file}")
     
     # Summary comparison
     print(f"\n{'='*60}")
@@ -142,6 +145,7 @@ def main():
     print(f"{'='*60}")
     for model, data in all_model_results.items():
         print(f"{model}: {data['accuracy']:.3f}")
+        print(f"  Results file: {data['output_file']}")
 
 if __name__ == "__main__":
     main() 
